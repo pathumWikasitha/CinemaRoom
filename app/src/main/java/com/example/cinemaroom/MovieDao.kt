@@ -12,4 +12,7 @@ interface MovieDao {
 
     @Query("SELECT * FROM movies")
     suspend fun getAllMovies(): List<Movie>
+
+    @Query("SELECT * FROM Movies WHERE title = :title LIMIT 1")
+    suspend fun getMovieByTitle(title: String): Movie?
 }
