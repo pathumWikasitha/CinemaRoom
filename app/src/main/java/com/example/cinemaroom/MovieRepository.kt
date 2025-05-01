@@ -1,38 +1,10 @@
 package com.example.cinemaroom
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.room.Room
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
-
-class MovieViewModel(application: Application) : AndroidViewModel(application) { // <-- Use AndroidViewModel
-    private val _movie = MutableStateFlow<Movie?>(null)
-    private val _db: MovieDatabase = Room.databaseBuilder(
-        application,
-        MovieDatabase::class.java,
-        "movie"
-    ).build()
-
-    fun addMoviesToDb() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val movieDao = _db.MovieDao()
-            val movies = getHardcodedMovies()
-            for (movie in movies) {
-                val existingMovie = movieDao.getMovieByTitle(movie.title)
-                if (existingMovie == null){
-                    movieDao.insertMovies(listOf(movie))
-                }
-            }
-        }
-    }
-
-    private fun getHardcodedMovies(): List<Movie> {
+class MovieRepository {
+    fun getHardcodedMovies(): List<Movie> {
         return listOf(
             Movie(
-                id = 1,
+                id = "1",
                 title = "The Shawshank Redemption",
                 year = "1994",
                 rated = "R",
@@ -45,7 +17,7 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
                 plot = "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency."
             ),
             Movie(
-                id = 2,
+                id = "2",
                 title = "Batman: The Dark Knight Returns, Part 1",
                 year = "2012",
                 rated = "PG-13",
@@ -58,7 +30,7 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
                 plot = "Batman has not been seen for ten years. A new breed of criminal ravages Gotham City, forcing 55-year-old Bruce Wayne back into the cape and cowl."
             ),
             Movie(
-                id = 3,
+                id = "3",
                 title = "The Lord of the Rings: The Return of the King",
                 year = "2003",
                 rated = "PG-13",
@@ -71,7 +43,7 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
                 plot = "Gandalf and Aragorn lead the World of Men against Sauron's army to draw his gaze from Frodo and Sam as they approach Mount Doom with the One Ring."
             ),
             Movie(
-                id = 4,
+                id = "4",
                 title = "Inception",
                 year = "2010",
                 rated = "PG-13",
@@ -84,7 +56,7 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
                 plot = "A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea into the mind of a CEO."
             ),
             Movie(
-                id = 5,
+                id = "5",
                 title = "The Matrix",
                 year = "1999",
                 rated = "R",
@@ -97,6 +69,5 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
                 plot = "When a beautiful stranger leads computer hacker Neo to a forbidding underworld, he discovers the shocking truth: life as he knows it is an elaborate deception."
             )
         )
-
     }
 }

@@ -10,8 +10,8 @@ interface MovieDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMovies(movies: List<Movie>)
 
-    @Query("SELECT * FROM movies")
-    suspend fun getAllMovies(): List<Movie>
+    @Query("SELECT * FROM movies where LOWER(actors) LIKE '%' || LOWER(:actorName) || '%'")
+    suspend fun searchMoviesByActor(actorName: String): List<Movie>
 
     @Query("SELECT * FROM Movies WHERE title = :title LIMIT 1")
     suspend fun getMovieByTitle(title: String): Movie?
