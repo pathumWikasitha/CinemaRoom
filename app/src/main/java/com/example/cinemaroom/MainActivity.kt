@@ -19,14 +19,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -83,7 +81,8 @@ fun MyApp(
         "home" -> HomeScreen(
             onAddMoviesClicked = onAddMoviesClicked,
             onSearchMoviesClicked = { currentScreen = "search_movies" },
-            onSearchActorsClicked = { currentScreen = "search_actors" }
+            onSearchActorsClicked = { currentScreen = "search_actors" },
+            onSearchByTitleClicked = { currentScreen = "search_movies_by_title" }
         )
 
         "search_movies" -> SearchMoviesScreen(
@@ -95,14 +94,20 @@ fun MyApp(
             onBack = { currentScreen = "home" },
             movieDao = movieDao
         )
+
+        "search_movies_by_title" -> SearchMoviesByTitleScreen(
+            onBack = { currentScreen = "home" }
+        )
     }
 }
+
 
 @Composable
 fun HomeScreen(
     onAddMoviesClicked: () -> Unit,
     onSearchMoviesClicked: () -> Unit,
-    onSearchActorsClicked: () -> Unit
+    onSearchActorsClicked: () -> Unit,
+    onSearchByTitleClicked: () -> Unit
 ) {
 
     Column(
@@ -128,6 +133,12 @@ fun HomeScreen(
         Button(onClick = onSearchActorsClicked, modifier = Modifier.fillMaxWidth()) {
             Text(text = "Search for Actors")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onSearchByTitleClicked, modifier = Modifier.fillMaxWidth()) {
+            Text(text = "Search Movies by Title")
+        }
     }
 }
 
@@ -135,7 +146,8 @@ fun HomeScreen(
 @Composable
 fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
     var movieTitle by rememberSaveable { mutableStateOf("") }
-    var movieInfo: Movie? by remember { mutableStateOf(null) }
+    var movieInfo by rememberSaveable { mutableStateOf<List<Movie>>(emptyList()) }
+
     // Create a CoroutineScope bound
     val scope = rememberCoroutineScope()
 
@@ -159,16 +171,15 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
         ) {
             Button(onClick = {
                 scope.launch {
-                    movieInfo = null
                     movieInfo = fetchMovie(movieTitle)
                 }
             }) {
                 Text("Retrieve Movie")
             }
             Button(onClick = {
-                movieInfo?.let {
+                movieInfo.let {
                     scope.launch {
-                        movieDao.insertMovies(listOf(it))
+                        movieDao.insertMovies(it)
                     }
                 }
             }) {
@@ -176,8 +187,14 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        movieInfo?.title?.let { Text(text = it) }
-        movieInfo?.director?.let { Text(text = it) }
+
+        Text(text = "Movie info")
+        if (movieInfo.isNotEmpty()) {
+            Text(text = movieInfo[0].title)
+            Text(text = movieInfo[0].actors)
+        }
+
+
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
             Text("Back")
@@ -185,7 +202,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
     }
 }
 
-suspend fun fetchMovie(title: String): Movie? {
+suspend fun fetchMovie(title: String): MutableList<Movie> {
     val apiKey = "42438be8"
     val urlString = "https://www.omdbapi.com/?t=$title&apikey=$apiKey"
     val url = URL(urlString)
@@ -202,30 +219,33 @@ suspend fun fetchMovie(title: String): Movie? {
         }
     }
     val json = JSONObject(stb.toString())
+    val movies = mutableListOf<Movie>()
     // Check if movie was found
-    if (json.optString("Response") == "False") {
-        return null
+    if (json.optString("Response") == "True") {
+        movies.add(
+            Movie(
+                title = json.optString("Title"),
+                year = json.optString("Year"),
+                id = json.optString("imdbID"),
+                rated = json.optString("imdbRating"),
+                released = json.optString("Released"),
+                runtime = json.optString("Runtime"),
+                genre = json.optString("Genre"),
+                director = json.optString("Director"),
+                writer = json.optString("Writer"),
+                actors = json.optString("Actors"),
+                plot = json.optString("Plot"),
+            )
+        )
     }
-    return Movie(
-        title = json.optString("Title"),
-        year = json.optString("Year"),
-        id = json.optString("imdbID"),
-        rated = json.optString("imdbRating"),
-        released = json.optString("Released"),
-        runtime = json.optString("Runtime"),
-        genre = json.optString("Genre"),
-        director = json.optString("Director"),
-        writer = json.optString("Writer"),
-        actors = json.optString("Actors"),
-        plot = json.optString("Plot"),
-    )
+    return movies
 }
 
 
 @Composable
 fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
     var searchedActor by rememberSaveable { mutableStateOf("") }
-    var movieList by remember { mutableStateOf<List<Movie>>(emptyList()) }
+    var movieList by rememberSaveable { mutableStateOf<List<Movie>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
 
     Column(
@@ -256,7 +276,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
             Text("Back to Home")
         }
         LazyColumn {
-            items(movieList.size){ movie ->
+            items(movieList.size) { movie ->
                 MovieItem(movie = movieList[movie])
             }
         }
@@ -265,9 +285,10 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
 @Composable
 fun MovieItem(movie: Movie) {
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .padding(vertical = 4.dp),
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
@@ -275,4 +296,96 @@ fun MovieItem(movie: Movie) {
             Text(text = "Actors: ${movie.actors}", style = MaterialTheme.typography.bodySmall)
         }
     }
+}
+
+
+@Composable
+fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var movieList by rememberSaveable { mutableStateOf<List<Movie>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("Enter movie title") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = {
+            if (searchQuery.isNotEmpty()) {
+                scope.launch {
+                    movieList = fetchMoviesByTitle(searchQuery)
+                }
+            }
+        }) { Text(text = "Search Movies") }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn {
+            items(movieList.size) { index ->
+                MovieItem(movie = movieList[index])
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+            Text("Back")
+        }
+    }
+}
+
+suspend fun fetchMoviesByTitle(searchQuery: String): List<Movie> {
+    val apiKey = "42438be8"
+    val urlString = "https://www.omdbapi.com/?s=$searchQuery&apikey=$apiKey"
+    val url = URL(urlString)
+    val connection: HttpURLConnection = url.openConnection() as HttpURLConnection
+
+    val stb = StringBuilder()
+    withContext(Dispatchers.IO) {
+        val br = BufferedReader(InputStreamReader(connection.inputStream))
+        var line: String? = br.readLine()
+        while (line != null) {
+            stb.append(line)
+            line = br.readLine()
+        }
+    }
+
+    val json = JSONObject(stb.toString())
+    val movies = mutableListOf<Movie>()
+
+    // Check if the response is valid
+    if (json.optString("Response") == "True") {
+        val searchResults = json.optJSONArray("Search")
+        for (i in 0 until searchResults.length()) {
+            val movieJson = searchResults.getJSONObject(i)
+            movies.add(
+                Movie(
+                    title = movieJson.optString("Title"),
+                    year = movieJson.optString("Year"),
+                    id = movieJson.optString("imdbID"),
+                    rated = movieJson.optString("imdbRating"),
+                    released = movieJson.optString("Released"),
+                    runtime = movieJson.optString("Runtime"),
+                    genre = movieJson.optString("Genre"),
+                    director = movieJson.optString("Director"),
+                    writer = movieJson.optString("Writer"),
+                    actors = movieJson.optString("Actors"),
+                    plot = movieJson.optString("Plot"),
+                )
+            )
+        }
+    }
+
+    return movies
 }
