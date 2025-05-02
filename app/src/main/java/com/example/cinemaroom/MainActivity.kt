@@ -1,6 +1,7 @@
 package com.example.cinemaroom
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,14 +20,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.room.Room
@@ -140,57 +147,70 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Button(onClick = onAddMoviesClicked, modifier = Modifier
-                .width(200.dp)
-                .height(40.dp)
-                .border(2.dp, Color.White, shape = RoundedCornerShape(25.dp)),
+            val context = LocalContext.current
+            Button(
+                onClick = {
+                    onAddMoviesClicked()
+                    Toast.makeText(context, "Movies added to DB", Toast.LENGTH_SHORT).show()
+                }, modifier = Modifier
+                    .width(220.dp)
+                    .height(55.dp)
+                    .border(2.dp, Color.White.copy(alpha = 0.5f), shape = RoundedCornerShape(25.dp))
+                    .padding(0.dp),
                 shape = RoundedCornerShape(25.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.15f)
-                )) {
-                Text(text = "Add Movies to DB")
+                    containerColor = Color.White.copy(alpha = 0.20f)
+                )
+            ) {
+                Text(text = "Add Movies to DB", style = MaterialTheme.typography.titleMedium)
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
             Button(
                 onClick = onSearchMoviesClicked, modifier = Modifier
-                    .width(200.dp)
-                    .height(40.dp)
-                    .border(2.dp, Color.White, shape = RoundedCornerShape(25.dp)),
+                    .width(220.dp)
+                    .height(55.dp)
+                    .border(2.dp, Color.White.copy(alpha = 0.5f), shape = RoundedCornerShape(25.dp))
+                    .padding(0.dp),
                 shape = RoundedCornerShape(25.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.15f)
+                    containerColor = Color.White.copy(alpha = 0.20f)
                 )
             ) {
-                Text(text = "Search for Movies")
+                Text(text = "Search for Movies", style = MaterialTheme.typography.titleMedium)
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            Button(onClick = onSearchActorsClicked, modifier = Modifier
-                .width(200.dp)
-                .height(40.dp)
-                .border(2.dp, Color.White, shape = RoundedCornerShape(25.dp)),
+            Button(
+                onClick = onSearchActorsClicked, modifier = Modifier
+                    .width(220.dp)
+                    .height(55.dp)
+                    .border(2.dp, Color.White.copy(alpha = 0.5f), shape = RoundedCornerShape(25.dp))
+                    .padding(0.dp),
                 shape = RoundedCornerShape(25.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.15f)
-                )) {
-                Text(text = "Search for Actors")
+                    containerColor = Color.White.copy(alpha = 0.20f)
+                )
+            ) {
+                Text(text = "Search for Actors", style = MaterialTheme.typography.titleMedium)
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            Button(onClick = onSearchByTitleClicked, modifier = Modifier
-                .width(200.dp)
-                .height(40.dp)
-                .border(2.dp, Color.White, shape = RoundedCornerShape(25.dp)),
+            Button(
+                onClick = onSearchByTitleClicked, modifier = Modifier
+                    .width(220.dp)
+                    .height(55.dp)
+                    .border(2.dp, Color.White.copy(alpha = 0.5f), shape = RoundedCornerShape(25.dp))
+                    .padding(0.dp),
                 shape = RoundedCornerShape(25.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.15f)
-                )) {
-                Text(text = "Search Movies by Title")
+                    containerColor = Color.White.copy(alpha = 0.20f)
+                )
+            ) {
+                Text(text = "Search Movies by Title", style = MaterialTheme.typography.titleMedium)
             }
             Spacer(modifier = Modifier.height(40.dp))
         }
@@ -317,6 +337,7 @@ suspend fun fetchMovie(title: String): MutableList<Movie> {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
     var searchedActor by rememberSaveable { mutableStateOf("") }
@@ -340,24 +361,63 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(50.dp),
+                .padding(10.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            OutlinedTextField(
-                value = searchedActor,
-                onValueChange = { searchedActor = it },
-                label = { Text("Enter actor name") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.width(280.dp),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        containerColor = Color.White.copy(alpha = 0.15f),
+                        unfocusedBorderColor = Color.White,
+                        focusedBorderColor = Color.White,
+                        focusedTextColor = Color.White,
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    value = searchedActor,
+                    onValueChange = { searchedActor = it },
+                    label = { Text("Enter actor name") },
+                    singleLine = true
 
-            Spacer(modifier = Modifier.height(8.dp))
+                )
 
-            Button(onClick = {
-                coroutineScope.launch {
-                    movieList = movieDao.searchMoviesByActor(searchedActor)
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            movieList = movieDao.searchMoviesByActor(searchedActor)
+                        }
+                    },
+                    modifier = Modifier
+                        .width(75.dp)
+                        .height(58.dp)
+                        .border(
+                            2.dp,
+                            Color.White.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(0.dp),
+                    shape = RoundedCornerShape(25.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(alpha = 0.15f)
+                    )
+                ) {
+                    Icon(
+                        Icons.Filled.Search,
+                        contentDescription = "Search",
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
-            }) { Text(text = "Search") }
+            }
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
