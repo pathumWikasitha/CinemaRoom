@@ -65,7 +65,11 @@ import androidx.compose.ui.unit.dp
 import androidx.room.Room
 import com.example.cinemaroom.ui.theme.CinemaRoomTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -344,10 +348,15 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    val context = LocalContext.current
                     Button(
                         onClick = {
                             scope.launch {
                                 movieInfo = fetchMovie(movieTitle)
+                                if (movieInfo.isEmpty()) {
+                                    Toast.makeText(context, "Movie Not Found", Toast.LENGTH_SHORT)
+                                        .show()
+                                }
                             }
                         },
                         modifier = Modifier
@@ -389,8 +398,6 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-
-                Text(text = "Movie info")
 
                 LazyColumn {
                     items(movieInfo.size) { movie ->
@@ -517,10 +524,19 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
                         label = { Text("Enter actor name") },
                         singleLine = true
                     )
+                    val context = LocalContext.current
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
                                 movieList = movieDao.searchMoviesByActor(searchedActor)
+                            }
+                            if (movieList.isEmpty()) {
+                                Toast.makeText(
+                                    context,
+                                    "$searchedActor Actor Not Found",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
                             }
                         },
                         modifier = Modifier
@@ -556,28 +572,6 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
         }
     }
 }
-
-//@Composable
-//fun MovieItem(movie: Movie) {
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(vertical = 4.dp),
-//        elevation = CardDefaults.cardElevation(4.dp)
-//    ) {
-//        Column(modifier = Modifier.padding(8.dp)) {
-//            Text(text = movie.title, style = MaterialTheme.typography.titleMedium)
-//            Text(text = "Year: ${movie.year}", style = MaterialTheme.typography.bodySmall)
-//            Text(text = "Released: ${movie.released}", style = MaterialTheme.typography.bodySmall)
-//            Text(text = "Genre: ${movie.genre}", style = MaterialTheme.typography.bodySmall)
-//            Text(text = "Director: ${movie.director}", style = MaterialTheme.typography.bodySmall)
-//            Text(text = "Writer: ${movie.writer}", style = MaterialTheme.typography.bodySmall)
-//            Text(text = "Actors: ${movie.actors}", style = MaterialTheme.typography.bodySmall)
-//            Text(text = "Plot: ${movie.plot}", style = MaterialTheme.typography.bodySmall)
-//
-//        }
-//    }
-//}
 
 @Composable
 fun MovieItem(movie: Movie) {
@@ -793,12 +787,21 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                         label = { Text("Enter movie title keyword") },
                         singleLine = true
                     )
+                    val context = LocalContext.current
                     IconButton(
                         onClick = {
                             if (searchQuery.isNotEmpty()) {
                                 scope.launch {
                                     movieList = fetchMoviesByTitle(searchQuery)
                                 }
+                            }
+                            if (movieList.isEmpty()) {
+                                Toast.makeText(
+                                    context,
+                                    "$searchQuery Movie Not Found",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
                             }
                         },
 
@@ -836,57 +839,60 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
     }
 }
 
-suspend fun fetchMoviesByTitle(searchQuery: String): List<Movie> {
-
+suspend fun fetchMoviesByTitle(searchQuery: String): List<Movie> = coroutineScope {
     val apiKey = "42438be8"
-    val urlString = "https://www.omdbapi.com/?s=$searchQuery&apikey=$apiKey"
-    val url = URL(urlString)
+    val searchUrl = "https://www.omdbapi.com/?s=$searchQuery&apikey=$apiKey"
+    val movies = mutableListOf<Deferred<Movie?>>()
 
-    val connection: HttpURLConnection =
-        withContext(Dispatchers.IO) {
-            url.openConnection()
-        } as HttpURLConnection
-
-    val stb = StringBuilder()
-    withContext(Dispatchers.IO) {
-        val br = BufferedReader(InputStreamReader(connection.inputStream))
-        var line: String? = br.readLine()
-        while (line != null) {
-            stb.append(line)
-            line = br.readLine()
-        }
+    val searchJson = withContext(Dispatchers.IO) {
+        val url = URL(searchUrl)
+        val connection = url.openConnection() as HttpURLConnection
+        val response = connection.inputStream.bufferedReader().readText()
+        JSONObject(response)
     }
 
-    val json = JSONObject(stb.toString())
-    val movies = mutableListOf<Movie>()
-
-    // Check if the response is valid
-    if (json.optString("Response") == "True") {
-        val searchResults = json.optJSONArray("Search")
+    if (searchJson.optString("Response") == "True") {
+        val searchResults = searchJson.optJSONArray("Search")
         if (searchResults != null) {
             for (i in 0 until searchResults.length()) {
-                val movieJson = searchResults.getJSONObject(i)
-                movies.add(
-                    Movie(
-                        title = movieJson.optString("Title"),
-                        year = movieJson.optString("Year"),
-                        id = movieJson.optString("imdbID"),
-                        rated = movieJson.optString("imdbRating"),
-                        released = movieJson.optString("Released"),
-                        runtime = movieJson.optString("Runtime"),
-                        genre = movieJson.optString("Genre"),
-                        director = movieJson.optString("Director"),
-                        writer = movieJson.optString("Writer"),
-                        actors = movieJson.optString("Actors"),
-                        plot = movieJson.optString("Plot"),
-                        poster = movieJson.optString("Poster")
-                    )
-                )
+                val movieSummary = searchResults.getJSONObject(i)
+                val imdbID = movieSummary.optString("imdbID")
+
+                // Fetch full details in parallel
+                val deferred = async(Dispatchers.IO) {
+                    try {
+                        val detailUrl = "https://www.omdbapi.com/?i=$imdbID&apikey=$apiKey"
+                        val detailConnection = URL(detailUrl).openConnection() as HttpURLConnection
+                        val detailResponse =
+                            detailConnection.inputStream.bufferedReader().readText()
+                        val movieJson = JSONObject(detailResponse)
+
+                        Movie(
+                            title = movieJson.optString("Title"),
+                            year = movieJson.optString("Year"),
+                            id = movieJson.optString("imdbID"),
+                            rated = movieJson.optString("Rated"),
+                            released = movieJson.optString("Released"),
+                            runtime = movieJson.optString("Runtime"),
+                            genre = movieJson.optString("Genre"),
+                            director = movieJson.optString("Director"),
+                            writer = movieJson.optString("Writer"),
+                            actors = movieJson.optString("Actors"),
+                            plot = movieJson.optString("Plot"),
+                            poster = movieJson.optString("Poster")
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                }
+
+                movies.add(deferred)
             }
         }
     }
 
-    return movies
+    movies.awaitAll().filterNotNull()
 }
 
 @Composable
