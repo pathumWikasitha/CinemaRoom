@@ -1,5 +1,6 @@
 package com.example.cinemaroom
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -7,8 +8,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,18 +29,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,10 +55,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.room.Room
 import com.example.cinemaroom.ui.theme.CinemaRoomTheme
@@ -88,7 +98,7 @@ class MainActivity : ComponentActivity() {
     private fun addMoviesToDatabase() {
         val movies = MovieRepository().getHardcodedMovies()
         CoroutineScope(Dispatchers.IO).launch {
-            db.movieDao().insertMovies(movies)
+            movieDao.insertMovies(movies)
         }
     }
 }
@@ -293,28 +303,21 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
             ) {
                 Spacer(modifier = Modifier.height(25.dp))
 
-                Button(
-                    onClick = onBack, modifier = Modifier
-                        .width(62.dp)
-                        .height(52.dp)
-                        .border(
-                            2.dp,
-                            Color.White.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(0.dp),
-                    shape = RoundedCornerShape(25.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(alpha = 0.15f)
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.size(38.dp),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.White.copy(alpha = 0.15f),
+                        contentColor = Color.White
                     )
                 ) {
                     Icon(
-                        Icons.Filled.ArrowBack,
-                        contentDescription = "Search",
-                        modifier = Modifier
-                            .size(32.dp)
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "back button",
+                        modifier = Modifier.size(32.dp),
                     )
                 }
+
 
                 Spacer(modifier = Modifier.height(90.dp))
 
@@ -349,7 +352,11 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                         },
                         modifier = Modifier
                             .height(50.dp)
-
+                            .border(
+                                2.dp,
+                                Color.White.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(35.dp)
+                            )
                             .padding(0.dp),
                         shape = RoundedCornerShape(35.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -367,7 +374,11 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                             }
                         }, modifier = Modifier
                             .height(50.dp)
-
+                            .border(
+                                2.dp,
+                                Color.White.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(35.dp)
+                            )
                             .padding(0.dp),
                         shape = RoundedCornerShape(35.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -380,9 +391,11 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(text = "Movie info")
-                if (movieInfo.isNotEmpty()) {
-                    Text(text = movieInfo[0].title)
-                    Text(text = movieInfo[0].actors)
+
+                LazyColumn {
+                    items(movieInfo.size) { movie ->
+                        MovieItem(movie = movieInfo[movie])
+                    }
                 }
 
             }
@@ -427,6 +440,7 @@ suspend fun fetchMovie(title: String): MutableList<Movie> {
                 writer = json.optString("Writer"),
                 actors = json.optString("Actors"),
                 plot = json.optString("Plot"),
+                poster = json.optString("Poster")
             )
         )
     }
@@ -459,19 +473,36 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
             ) {
+                Spacer(modifier = Modifier.height(25.dp))
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.size(38.dp),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.White.copy(alpha = 0.15f),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "back button",
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(85.dp))
+
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(0.dp),
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     OutlinedTextField(
-                        modifier = Modifier.width(280.dp),
+                        modifier = Modifier.width(285.dp),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
                             containerColor = Color.White.copy(alpha = 0.15f),
                             unfocusedBorderColor = Color.White,
@@ -486,31 +517,29 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
                         label = { Text("Enter actor name") },
                         singleLine = true
                     )
-
-                    Button(
+                    IconButton(
                         onClick = {
                             coroutineScope.launch {
                                 movieList = movieDao.searchMoviesByActor(searchedActor)
                             }
                         },
                         modifier = Modifier
-                            .width(75.dp)
-                            .height(58.dp)
+                            .size(55.dp)
+                            .padding(0.dp)
                             .border(
                                 2.dp,
                                 Color.White.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(50.dp)
-                            )
-                            .padding(0.dp),
-                        shape = RoundedCornerShape(25.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White.copy(alpha = 0.15f)
+                                shape = RoundedCornerShape(45.dp),
+                            ),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.15f),
+                            contentColor = Color.White
                         )
                     ) {
                         Icon(
                             Icons.Filled.Search,
                             contentDescription = "Search",
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         )
                     }
                 }
@@ -518,9 +547,6 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = onBack) {
-                    Text("Back to Home")
-                }
                 LazyColumn {
                     items(movieList.size) { movie ->
                         MovieItem(movie = movieList[movie])
@@ -531,21 +557,175 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
     }
 }
 
+//@Composable
+//fun MovieItem(movie: Movie) {
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(vertical = 4.dp),
+//        elevation = CardDefaults.cardElevation(4.dp)
+//    ) {
+//        Column(modifier = Modifier.padding(8.dp)) {
+//            Text(text = movie.title, style = MaterialTheme.typography.titleMedium)
+//            Text(text = "Year: ${movie.year}", style = MaterialTheme.typography.bodySmall)
+//            Text(text = "Released: ${movie.released}", style = MaterialTheme.typography.bodySmall)
+//            Text(text = "Genre: ${movie.genre}", style = MaterialTheme.typography.bodySmall)
+//            Text(text = "Director: ${movie.director}", style = MaterialTheme.typography.bodySmall)
+//            Text(text = "Writer: ${movie.writer}", style = MaterialTheme.typography.bodySmall)
+//            Text(text = "Actors: ${movie.actors}", style = MaterialTheme.typography.bodySmall)
+//            Text(text = "Plot: ${movie.plot}", style = MaterialTheme.typography.bodySmall)
+//
+//        }
+//    }
+//}
+
 @Composable
 fun MovieItem(movie: Movie) {
+    var imageBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var showDetails by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // Load image
+    LaunchedEffect(movie.poster) {
+        withContext(Dispatchers.IO) {
+            try {
+                val url = URL(movie.poster)
+                val bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream())
+                imageBitmap = bmp?.asImageBitmap()
+                isLoading = false
+            } catch (e: Exception) {
+                e.printStackTrace()
+                isLoading = false
+            }
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .padding(8.dp)
+            .clickable { showDetails = !showDetails },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.25f)
+        ),
+        border = BorderStroke(2.dp, Color.White.copy(alpha = 0.35f))
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Text(text = movie.title, style = MaterialTheme.typography.titleMedium)
-            Text(text = "Actors: ${movie.actors}", style = MaterialTheme.typography.bodySmall)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(350.dp)
+        ) {
+            // Poster
+            androidx.compose.animation.AnimatedVisibility(
+                visible = !showDetails && !isLoading,
+                exit = slideOutVertically { fullWidth -> -fullWidth },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                imageBitmap?.let {
+                    Image(
+                        bitmap = it,
+                        contentDescription = "Movie Poster",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            // Loading animation
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp)
+                        .background(
+                            Color.White.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color.White)
+                }
+            }
+
+            // Fallback text if no image found
+            if (imageBitmap == null && !isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp)
+                        .background(
+                            Color.White.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = movie.title,
+                        style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            // Text details
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showDetails,
+                enter = slideInVertically { fullWidth -> fullWidth },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .padding(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = movie.title,
+                            style = MaterialTheme.typography.titleLarge.copy(color = Color.White)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Year: ${movie.year}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+                        Text(
+                            text = "Released: ${movie.released}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+                        Text(
+                            text = "Genre: ${movie.genre}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+                        Text(
+                            text = "Director: ${movie.director}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+                        Text(
+                            text = "Writer: ${movie.writer}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+                        Text(
+                            text = "Actors: ${movie.actors}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+                        Text(
+                            text = "Plot: ${movie.plot}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -571,25 +751,77 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
             ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    label = { Text("Enter movie title") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Spacer(modifier = Modifier.height(25.dp))
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.size(38.dp),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.White.copy(alpha = 0.15f),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "back button",
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(85.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.width(285.dp),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            containerColor = Color.White.copy(alpha = 0.15f),
+                            unfocusedBorderColor = Color.White,
+                            focusedBorderColor = Color.White,
+                            focusedTextColor = Color.White,
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Enter movie title keyword") },
+                        singleLine = true
+                    )
+                    IconButton(
+                        onClick = {
+                            if (searchQuery.isNotEmpty()) {
+                                scope.launch {
+                                    movieList = fetchMoviesByTitle(searchQuery)
+                                }
+                            }
+                        },
 
-                Button(onClick = {
-                    if (searchQuery.isNotEmpty()) {
-                        scope.launch {
-                            movieList = fetchMoviesByTitle(searchQuery)
-                        }
+                        modifier = Modifier
+                            .size(55.dp)
+                            .padding(0.dp)
+                            .border(
+                                2.dp,
+                                Color.White.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(45.dp),
+                            ),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.15f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            Icons.Filled.Search,
+                            contentDescription = "Search Button",
+                            modifier = Modifier.size(32.dp),
+                        )
                     }
-                }) { Text(text = "Search Movies") }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -599,11 +831,6 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-                    Text("Back")
-                }
             }
         }
     }
@@ -652,6 +879,7 @@ suspend fun fetchMoviesByTitle(searchQuery: String): List<Movie> {
                         writer = movieJson.optString("Writer"),
                         actors = movieJson.optString("Actors"),
                         plot = movieJson.optString("Plot"),
+                        poster = movieJson.optString("Poster")
                     )
                 )
             }
