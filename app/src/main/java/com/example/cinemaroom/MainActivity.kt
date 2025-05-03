@@ -148,19 +148,7 @@ fun HomeScreen(
 ) {
     BackgroundWrapper {
         FadeInContent {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 50.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
-            ) {
-                Image(
-                    modifier = Modifier.size(150.dp),
-                    painter = painterResource(R.drawable.logo),
-                    contentDescription = "Logo"
-                )
-            }
+            AppLogo()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -273,6 +261,23 @@ fun HomeScreen(
     }
 }
 
+@Composable
+fun AppLogo() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 50.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Image(
+            modifier = Modifier.size(150.dp),
+            painter = painterResource(R.drawable.logo),
+            contentDescription = "Logo"
+        )
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -285,19 +290,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
     BackgroundWrapper {
         FadeInContent {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 50.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
-            ) {
-                Image(
-                    modifier = Modifier.size(150.dp),
-                    painter = painterResource(R.drawable.logo),
-                    contentDescription = "Logo"
-                )
-            }
+            AppLogo()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -325,42 +318,48 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
                 Spacer(modifier = Modifier.height(90.dp))
 
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        containerColor = Color.White.copy(alpha = 0.15f),
-                        unfocusedBorderColor = Color.White,
-                        focusedBorderColor = Color.White,
-                        focusedTextColor = Color.White,
-                        focusedLabelColor = Color.White,
-                        unfocusedLabelColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    value = movieTitle,
-                    onValueChange = { movieTitle = it },
-                    label = { Text("Enter movie title") },
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(15.dp))
-
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    OutlinedTextField(
+                        modifier = Modifier.width(250.dp),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            containerColor = Color.White.copy(alpha = 0.15f),
+                            unfocusedBorderColor = Color.White,
+                            focusedBorderColor = Color.White,
+                            focusedTextColor = Color.White,
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        value = movieTitle,
+                        onValueChange = { movieTitle = it },
+                        label = { Text("Enter movie title") },
+                        singleLine = true
+                    )
                     val context = LocalContext.current
                     Button(
+
                         onClick = {
-                            scope.launch {
-                                movieInfo = fetchMovie(movieTitle)
-                                if (movieInfo.isEmpty()) {
-                                    Toast.makeText(context, "Movie Not Found", Toast.LENGTH_SHORT)
-                                        .show()
+                            if (movieTitle.isNotBlank()) {
+                                scope.launch {
+                                    movieInfo = fetchMovie(movieTitle)
+                                    if (movieInfo.isEmpty()) {
+                                        Toast.makeText(
+                                            context,
+                                            "Movie Not Found",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                            .show()
+                                    }
                                 }
                             }
                         },
                         modifier = Modifier
-                            .height(50.dp)
+                            .height(60.dp)
                             .border(
                                 2.dp,
                                 Color.White.copy(alpha = 0.5f),
@@ -369,40 +368,58 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                             .padding(0.dp),
                         shape = RoundedCornerShape(35.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White.copy(alpha = 0.45f)
+                            containerColor = Color.White.copy(alpha = 0.15f)
                         )
                     ) {
-                        Text("Retrieve Movie")
-                    }
-                    Button(
-                        onClick = {
-                            movieInfo.let {
-                                scope.launch {
-                                    movieDao.insertMovies(it)
-                                }
-                            }
-                        }, modifier = Modifier
-                            .height(50.dp)
-                            .border(
-                                2.dp,
-                                Color.White.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(35.dp)
-                            )
-                            .padding(0.dp),
-                        shape = RoundedCornerShape(35.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White.copy(alpha = 0.45f)
-                        )
-                    ) {
-                        Text("Save to DB")
+                        Text("Retrieve")
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+
+                Spacer(modifier = Modifier.height(15.dp))
 
                 LazyColumn {
                     items(movieInfo.size) { movie ->
                         MovieItem(movie = movieInfo[movie])
                     }
+                }
+                if (movieInfo.isNotEmpty()) {
+                    val context = LocalContext.current
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Button(
+                            onClick = {
+                                movieInfo.let {
+                                    scope.launch {
+                                        movieDao.insertMovies(it)
+                                        Toast.makeText(
+                                            context,
+                                            "Movies added to DB",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                            .show()
+                                    }
+                                }
+                            }, modifier = Modifier
+                                .height(50.dp)
+                                .border(
+                                    2.dp,
+                                    Color.White.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(35.dp)
+                                )
+                                .padding(0.dp),
+                            shape = RoundedCornerShape(35.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White.copy(alpha = 0.15f)
+                            )
+                        ) {
+                            Text("Save to DB")
+                        }
+                    }
+
                 }
 
             }
@@ -464,19 +481,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
     BackgroundWrapper {
         FadeInContent {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 50.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
-            ) {
-                Image(
-                    modifier = Modifier.size(150.dp),
-                    painter = painterResource(R.drawable.logo),
-                    contentDescription = "Logo"
-                )
-            }
+            AppLogo()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -529,15 +534,16 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
                         onClick = {
                             coroutineScope.launch {
                                 movieList = movieDao.searchMoviesByActor(searchedActor)
+                                if (movieList.isEmpty()) {
+                                    Toast.makeText(
+                                        context,
+                                        "$searchedActor Actor Not Found",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                        .show()
+                                }
                             }
-                            if (movieList.isEmpty()) {
-                                Toast.makeText(
-                                    context,
-                                    "$searchedActor Actor Not Found",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                            }
+
                         },
                         modifier = Modifier
                             .size(55.dp)
@@ -559,7 +565,6 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
                         )
                     }
                 }
-
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -609,7 +614,7 @@ fun MovieItem(movie: Movie) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(350.dp)
+                .height(380.dp)
         ) {
             // Poster
             androidx.compose.animation.AnimatedVisibility(
@@ -674,7 +679,7 @@ fun MovieItem(movie: Movie) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f))
+                        .background(Color.Black.copy(alpha = 0.6f))
                         .padding(12.dp)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -683,34 +688,119 @@ fun MovieItem(movie: Movie) {
                             style = MaterialTheme.typography.titleLarge.copy(color = Color.White)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Year: ${movie.year}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                        )
-                        Text(
-                            text = "Released: ${movie.released}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                        )
-                        Text(
-                            text = "Genre: ${movie.genre}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                        )
-                        Text(
-                            text = "Director: ${movie.director}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                        )
-                        Text(
-                            text = "Writer: ${movie.writer}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                        )
-                        Text(
-                            text = "Actors: ${movie.actors}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                        )
-                        Text(
-                            text = "Plot: ${movie.plot}",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+
+                        ) {
+                            Text(
+                                text = "Year: ",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = movie.year,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+
+                                )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+
+                        ) {
+                            Text(
+                                text = "Released: ",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = movie.released,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+
+                        ) {
+                            Text(
+                                text = "Genre: ",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = movie.genre,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                            )
+
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+
+                        ) {
+                            Text(
+                                text = "Director: ",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = movie.director,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+
+                        ) {
+                            Text(
+                                text = "Writer: ",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = movie.writer,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+
+                        ) {
+                            Text(
+                                text = "Actors: ",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = movie.actors,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+
+                        ) {
+                            Text(
+                                text = "Plot: ",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = movie.plot,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                            )
+                        }
                     }
                 }
             }
@@ -728,19 +818,7 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
 
     BackgroundWrapper {
         FadeInContent {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 50.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
-            ) {
-                Image(
-                    modifier = Modifier.size(150.dp),
-                    painter = painterResource(R.drawable.logo),
-                    contentDescription = "Logo"
-                )
-            }
+            AppLogo()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -793,15 +871,15 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                             if (searchQuery.isNotEmpty()) {
                                 scope.launch {
                                     movieList = fetchMoviesByTitle(searchQuery)
+                                    if (movieList.isEmpty()) {
+                                        Toast.makeText(
+                                            context,
+                                            "$searchQuery Movie Not Found",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                            .show()
+                                    }
                                 }
-                            }
-                            if (movieList.isEmpty()) {
-                                Toast.makeText(
-                                    context,
-                                    "$searchQuery Movie Not Found",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
                             }
                         },
 
