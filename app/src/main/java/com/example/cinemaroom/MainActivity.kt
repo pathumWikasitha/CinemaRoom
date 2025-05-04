@@ -327,7 +327,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                 }
 
 
-                Spacer(modifier = Modifier.height(if (isPortrait) 90.dp else 20.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 90.dp else 15.dp))
 
                 Row(
                     modifier = Modifier
@@ -386,7 +386,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 15.dp else 10.dp))
 
                 LazyColumn {
                     items(movieInfo.size) { movie ->
@@ -576,7 +576,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 15.dp else 10.dp))
 
                 LazyColumn {
                     items(movieList.size) { movie ->
@@ -608,110 +608,6 @@ fun MovieItem(movie: Movie, isPortrait: Boolean) {
             }
         }
     }
-
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(8.dp)
-//            .clickable { showDetails = !showDetails },
-//        shape = RoundedCornerShape(12.dp),
-//        elevation = CardDefaults.cardElevation(6.dp),
-//        colors = CardDefaults.cardColors(
-//            containerColor = Color.White.copy(alpha = 0.25f)
-//        ),
-//        border = BorderStroke(2.dp, Color.White.copy(alpha = 0.35f))
-//    ) {
-//        Box(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(if (isPortrait) 380.dp else 240.dp)
-//        ) {
-//            // Poster
-//            androidx.compose.animation.AnimatedVisibility(
-//                visible = !showDetails && !isLoading,
-//                exit = slideOutVertically { fullWidth -> -fullWidth },
-//                modifier = Modifier.fillMaxWidth()
-//            ) {
-//                imageBitmap?.let {
-//                    Image(
-//                        bitmap = it,
-//                        contentDescription = "Movie Poster",
-//                        modifier = Modifier
-//                            .fillMaxSize()
-//                            .padding(12.dp),
-//                        contentScale = ContentScale.Crop
-//                    )
-//                }
-//            }
-//
-//            // Loading animation
-//            if (isLoading) {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(12.dp)
-//                        .background(
-//                            Color.White.copy(alpha = 0.5f),
-//                            shape = RoundedCornerShape(12.dp)
-//                        ),
-//                    contentAlignment = Alignment.Center
-//                ) {
-//                    CircularProgressIndicator(color = Color.White)
-//                }
-//            }
-//
-//            // Fallback text if no image found
-//            if (imageBitmap == null && !isLoading) {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(12.dp)
-//                        .background(
-//                            Color.White.copy(alpha = 0.5f),
-//                            shape = RoundedCornerShape(12.dp)
-//                        ),
-//                    contentAlignment = Alignment.Center
-//                ) {
-//                    Text(
-//                        text = movie.title,
-//                        style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
-//                        textAlign = TextAlign.Center
-//                    )
-//                }
-//            }
-//
-//            // Text details
-//            androidx.compose.animation.AnimatedVisibility(
-//                visible = showDetails,
-//                enter = slideInVertically { fullWidth -> fullWidth },
-//                modifier = Modifier.fillMaxWidth()
-//            ) {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .background(Color.Black.copy(alpha = 0.6f))
-//                        .padding(12.dp)
-//                ) {
-//                    Column(modifier = Modifier.padding(12.dp)) {
-//                        Text(
-//                            text = movie.title,
-//                            style = MaterialTheme.typography.titleLarge.copy(color = Color.White),
-//                            fontWeight = FontWeight.Bold,
-//                        )
-//
-//                        Spacer(modifier = Modifier.height(4.dp))
-//                        InfoRow("Year: ", movie.year)
-//                        InfoRow("Released: ", movie.released)
-//                        InfoRow("Genre: ", movie.genre)
-//                        InfoRow("Director: ", movie.director)
-//                        InfoRow("Writer: ", movie.writer)
-//                        InfoRow("Actors: ", movie.actors)
-//                        InfoRow("Plot: ", movie.plot)
-//                    }
-//                }
-//            }
-//        }
-//    }
 
     Card(
         modifier = Modifier
@@ -936,7 +832,7 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(85.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 90.dp else 15.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -944,7 +840,7 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     OutlinedTextField(
-                        modifier = Modifier.width(285.dp),
+                        modifier = Modifier.width(if (isPortrait) 290.dp else 650.dp),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
                             containerColor = Color.White.copy(alpha = 0.15f),
                             unfocusedBorderColor = Color.White,
@@ -953,7 +849,7 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                             focusedLabelColor = Color.White,
                             unfocusedLabelColor = Color.White
                         ),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(25.dp),
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         label = { Text("Enter movie title keyword") },
@@ -998,7 +894,7 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 15.dp else 10.dp))
 
                 LazyColumn {
                     items(movieList.size) { index ->
