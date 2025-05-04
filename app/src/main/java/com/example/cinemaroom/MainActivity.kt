@@ -1,5 +1,6 @@
 package com.example.cinemaroom
 
+import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
@@ -57,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -146,9 +148,12 @@ fun HomeScreen(
     onSearchActorsClicked: () -> Unit,
     onSearchByTitleClicked: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     BackgroundWrapper {
         FadeInContent {
-            AppLogo()
+            AppLogo(isPortrait)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -156,7 +161,7 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(330.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 330.dp else 80.dp))
                 val context = LocalContext.current
                 Button(
                     onClick = {
@@ -164,8 +169,8 @@ fun HomeScreen(
                         Toast.makeText(context, "Movies added to Database", Toast.LENGTH_SHORT)
                             .show()
                     }, modifier = Modifier
-                        .width(220.dp)
-                        .height(55.dp)
+                        .width(if (isPortrait) 220.dp else 218.dp)
+                        .height(if (isPortrait) 55.dp else 48.dp)
                         .border(
                             2.dp,
                             Color.White.copy(alpha = 0.5f),
@@ -184,12 +189,12 @@ fun HomeScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 40.dp else 18.dp))
 
                 Button(
                     onClick = onSearchMoviesClicked, modifier = Modifier
-                        .width(220.dp)
-                        .height(55.dp)
+                        .width(if (isPortrait) 220.dp else 218.dp)
+                        .height(if (isPortrait) 55.dp else 48.dp)
                         .border(
                             2.dp,
                             Color.White.copy(alpha = 0.5f),
@@ -208,12 +213,12 @@ fun HomeScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 40.dp else 18.dp))
 
                 Button(
                     onClick = onSearchActorsClicked, modifier = Modifier
-                        .width(220.dp)
-                        .height(55.dp)
+                        .width(if (isPortrait) 220.dp else 218.dp)
+                        .height(if (isPortrait) 55.dp else 48.dp)
                         .border(
                             2.dp,
                             Color.White.copy(alpha = 0.5f),
@@ -232,12 +237,12 @@ fun HomeScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 40.dp else 18.dp))
 
                 Button(
                     onClick = onSearchByTitleClicked, modifier = Modifier
-                        .width(220.dp)
-                        .height(55.dp)
+                        .width(if (isPortrait) 220.dp else 218.dp)
+                        .height(if (isPortrait) 55.dp else 48.dp)
                         .border(
                             2.dp,
                             Color.White.copy(alpha = 0.5f),
@@ -252,26 +257,26 @@ fun HomeScreen(
                     Text(
                         text = "Search Movies by Title",
                         style = MaterialTheme.typography.titleMedium.copy(color = Color.White),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                 }
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 40.dp else 18.dp))
             }
         }
     }
 }
 
 @Composable
-fun AppLogo() {
+fun AppLogo(isPortrait: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 50.dp),
+            .padding(top = if (isPortrait) 50.dp else 3.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
         Image(
-            modifier = Modifier.size(150.dp),
+            modifier = Modifier.size(size = if (isPortrait) 150.dp else 120.dp),
             painter = painterResource(R.drawable.logo),
             contentDescription = "Logo"
         )
@@ -288,9 +293,12 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
     // Create a CoroutineScope bound
     val scope = rememberCoroutineScope()
 
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     BackgroundWrapper {
         FadeInContent {
-            AppLogo()
+            AppLogo(isPortrait)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -478,10 +486,12 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
     var searchedActor by rememberSaveable { mutableStateOf("") }
     var movieList by rememberSaveable { mutableStateOf<List<Movie>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     BackgroundWrapper {
         FadeInContent {
-            AppLogo()
+            AppLogo(isPortrait)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -685,7 +695,8 @@ fun MovieItem(movie: Movie) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
                             text = movie.title,
-                            style = MaterialTheme.typography.titleLarge.copy(color = Color.White)
+                            style = MaterialTheme.typography.titleLarge.copy(color = Color.White),
+                            fontWeight = FontWeight.Bold,
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(
@@ -707,8 +718,7 @@ fun MovieItem(movie: Movie) {
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
                                 text = "Released: ",
@@ -815,10 +825,12 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var movieList by rememberSaveable { mutableStateOf<List<Movie>>(emptyList()) }
     val scope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     BackgroundWrapper {
         FadeInContent {
-            AppLogo()
+            AppLogo(isPortrait)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
