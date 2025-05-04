@@ -403,10 +403,10 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                                 onClick = {
                                     movieInfo.let {
                                         scope.launch {
-                                            movieDao.insertMovies(it)
+                                            movieDao.insertMovie(movieInfo[movie])
                                             Toast.makeText(
                                                 context,
-                                                "Movies added to DB",
+                                                movieInfo[movie].title + " added to DB",
                                                 Toast.LENGTH_SHORT
                                             )
                                                 .show()
