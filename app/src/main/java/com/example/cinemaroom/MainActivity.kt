@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,7 +56,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -324,7 +327,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                 }
 
 
-                Spacer(modifier = Modifier.height(90.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 90.dp else 20.dp))
 
                 Row(
                     modifier = Modifier
@@ -333,7 +336,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     OutlinedTextField(
-                        modifier = Modifier.width(250.dp),
+                        modifier = Modifier.width(if (isPortrait) 250.dp else 650.dp),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
                             containerColor = Color.White.copy(alpha = 0.15f),
                             unfocusedBorderColor = Color.White,
@@ -358,7 +361,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                                     if (movieInfo.isEmpty()) {
                                         Toast.makeText(
                                             context,
-                                            "Movie Not Found",
+                                            "$movieTitle Movie Not Found",
                                             Toast.LENGTH_SHORT
                                         )
                                             .show()
@@ -387,47 +390,44 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
                 LazyColumn {
                     items(movieInfo.size) { movie ->
-                        MovieItem(movie = movieInfo[movie])
-                    }
-                }
-                if (movieInfo.isNotEmpty()) {
-                    val context = LocalContext.current
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Button(
-                            onClick = {
-                                movieInfo.let {
-                                    scope.launch {
-                                        movieDao.insertMovies(it)
-                                        Toast.makeText(
-                                            context,
-                                            "Movies added to DB",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                            .show()
-                                    }
-                                }
-                            }, modifier = Modifier
-                                .height(50.dp)
-                                .border(
-                                    2.dp,
-                                    Color.White.copy(alpha = 0.5f),
-                                    shape = RoundedCornerShape(35.dp)
-                                )
-                                .padding(0.dp),
-                            shape = RoundedCornerShape(35.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White.copy(alpha = 0.15f)
-                            )
+                        MovieItem(movie = movieInfo[movie], isPortrait = isPortrait)
+                        val context = LocalContext.current
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Save to DB")
+                            Spacer(modifier = Modifier.height(if (isPortrait) 20.dp else 10.dp))
+
+                            Button(
+                                onClick = {
+                                    movieInfo.let {
+                                        scope.launch {
+                                            movieDao.insertMovies(it)
+                                            Toast.makeText(
+                                                context,
+                                                "Movies added to DB",
+                                                Toast.LENGTH_SHORT
+                                            )
+                                                .show()
+                                        }
+                                    }
+                                }, modifier = Modifier
+                                    .height(50.dp)
+                                    .border(
+                                        2.dp,
+                                        Color.White.copy(alpha = 0.5f),
+                                        shape = RoundedCornerShape(35.dp)
+                                    )
+                                    .padding(0.dp),
+                                shape = RoundedCornerShape(35.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.White.copy(alpha = 0.15f)
+                                )
+                            ) {
+                                Text("Save to DB")
+                            }
                         }
                     }
-
                 }
 
             }
@@ -515,7 +515,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(85.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 90.dp else 20.dp))
 
                 Row(
                     modifier = Modifier
@@ -524,7 +524,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     OutlinedTextField(
-                        modifier = Modifier.width(285.dp),
+                        modifier = Modifier.width(if (isPortrait) 250.dp else 650.dp),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
                             containerColor = Color.White.copy(alpha = 0.15f),
                             unfocusedBorderColor = Color.White,
@@ -580,7 +580,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
                 LazyColumn {
                     items(movieList.size) { movie ->
-                        MovieItem(movie = movieList[movie])
+                        MovieItem(movie = movieList[movie],isPortrait)
                     }
                 }
             }
@@ -589,7 +589,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
 }
 
 @Composable
-fun MovieItem(movie: Movie) {
+fun MovieItem(movie: Movie, isPortrait: Boolean) {
     var imageBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
     var showDetails by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
@@ -609,6 +609,110 @@ fun MovieItem(movie: Movie) {
         }
     }
 
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(8.dp)
+//            .clickable { showDetails = !showDetails },
+//        shape = RoundedCornerShape(12.dp),
+//        elevation = CardDefaults.cardElevation(6.dp),
+//        colors = CardDefaults.cardColors(
+//            containerColor = Color.White.copy(alpha = 0.25f)
+//        ),
+//        border = BorderStroke(2.dp, Color.White.copy(alpha = 0.35f))
+//    ) {
+//        Box(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .height(if (isPortrait) 380.dp else 240.dp)
+//        ) {
+//            // Poster
+//            androidx.compose.animation.AnimatedVisibility(
+//                visible = !showDetails && !isLoading,
+//                exit = slideOutVertically { fullWidth -> -fullWidth },
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                imageBitmap?.let {
+//                    Image(
+//                        bitmap = it,
+//                        contentDescription = "Movie Poster",
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .padding(12.dp),
+//                        contentScale = ContentScale.Crop
+//                    )
+//                }
+//            }
+//
+//            // Loading animation
+//            if (isLoading) {
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .padding(12.dp)
+//                        .background(
+//                            Color.White.copy(alpha = 0.5f),
+//                            shape = RoundedCornerShape(12.dp)
+//                        ),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    CircularProgressIndicator(color = Color.White)
+//                }
+//            }
+//
+//            // Fallback text if no image found
+//            if (imageBitmap == null && !isLoading) {
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .padding(12.dp)
+//                        .background(
+//                            Color.White.copy(alpha = 0.5f),
+//                            shape = RoundedCornerShape(12.dp)
+//                        ),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    Text(
+//                        text = movie.title,
+//                        style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
+//                        textAlign = TextAlign.Center
+//                    )
+//                }
+//            }
+//
+//            // Text details
+//            androidx.compose.animation.AnimatedVisibility(
+//                visible = showDetails,
+//                enter = slideInVertically { fullWidth -> fullWidth },
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .background(Color.Black.copy(alpha = 0.6f))
+//                        .padding(12.dp)
+//                ) {
+//                    Column(modifier = Modifier.padding(12.dp)) {
+//                        Text(
+//                            text = movie.title,
+//                            style = MaterialTheme.typography.titleLarge.copy(color = Color.White),
+//                            fontWeight = FontWeight.Bold,
+//                        )
+//
+//                        Spacer(modifier = Modifier.height(4.dp))
+//                        InfoRow("Year: ", movie.year)
+//                        InfoRow("Released: ", movie.released)
+//                        InfoRow("Genre: ", movie.genre)
+//                        InfoRow("Director: ", movie.director)
+//                        InfoRow("Writer: ", movie.writer)
+//                        InfoRow("Actors: ", movie.actors)
+//                        InfoRow("Plot: ", movie.plot)
+//                    }
+//                }
+//            }
+//        }
+//    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -621,201 +725,179 @@ fun MovieItem(movie: Movie) {
         ),
         border = BorderStroke(2.dp, Color.White.copy(alpha = 0.35f))
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(380.dp)
-        ) {
-            // Poster
-            androidx.compose.animation.AnimatedVisibility(
-                visible = !showDetails && !isLoading,
-                exit = slideOutVertically { fullWidth -> -fullWidth },
-                modifier = Modifier.fillMaxWidth()
+        if (isPortrait) {
+            // PORTRAIT MODE (Vertical Layout)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(380.dp)
             ) {
-                imageBitmap?.let {
-                    Image(
-                        bitmap = it,
-                        contentDescription = "Movie Poster",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                PosterContent(imageBitmap, isLoading, showDetails, movie)
             }
-
-            // Loading animation
-            if (isLoading) {
+        } else {
+            // LANDSCAPE MODE (Horizontal Layout)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp)
+            ) {
+                // Left: Poster
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(12.dp)
-                        .background(
-                            Color.White.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Color.White)
-                }
-            }
-
-            // Fallback text if no image found
-            if (imageBitmap == null && !isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(12.dp)
-                        .background(
-                            Color.White.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = movie.title,
-                        style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            // Text details
-            androidx.compose.animation.AnimatedVisibility(
-                visible = showDetails,
-                enter = slideInVertically { fullWidth -> fullWidth },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.6f))
-                        .padding(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White)
+                    } else if (imageBitmap != null) {
+                        Image(
+                            bitmap = imageBitmap!!,
+                            contentDescription = "Movie Poster",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
                         Text(
                             text = movie.title,
-                            style = MaterialTheme.typography.titleLarge.copy(color = Color.White),
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
+                            textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-
-                        ) {
-                            Text(
-                                text = "Year: ",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = movie.year,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-
-                                )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                text = "Released: ",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = movie.released,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-
-                        ) {
-                            Text(
-                                text = "Genre: ",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = movie.genre,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                            )
-
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-
-                        ) {
-                            Text(
-                                text = "Director: ",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = movie.director,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-
-                        ) {
-                            Text(
-                                text = "Writer: ",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = movie.writer,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-
-                        ) {
-                            Text(
-                                text = "Actors: ",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = movie.actors,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-
-                        ) {
-                            Text(
-                                text = "Plot: ",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = movie.plot,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                            )
-                        }
                     }
+                }
+
+                // Right: Details
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(8.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                ) {
+                    MovieDetails(movie)
                 }
             }
         }
     }
+
+}
+@Composable
+fun PosterContent(
+    imageBitmap: ImageBitmap?,
+    isLoading: Boolean,
+    showDetails: Boolean,
+    movie: Movie
+) {
+   AnimatedVisibility(
+        visible = !showDetails && !isLoading,
+        exit = slideOutVertically { fullWidth -> -fullWidth },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        imageBitmap?.let {
+            Image(
+                bitmap = it,
+                contentDescription = "Movie Poster",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+
+    // Loading
+    if (isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
+                .background(
+                    Color.White.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color.White)
+        }
+    }
+
+    if (imageBitmap == null && !isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
+                .background(
+                    Color.White.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = movie.title,
+                style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+
+    // Details
+    AnimatedVisibility(
+        visible = showDetails,
+        enter = slideInVertically { it },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.6f))
+                .padding(12.dp)
+        ) {
+            MovieDetails(movie)
+        }
+    }
+}
+
+@Composable
+fun MovieDetails(movie: Movie) {
+    Column(modifier = Modifier.padding(12.dp)) {
+        Text(
+            text = movie.title,
+            style = MaterialTheme.typography.titleLarge.copy(color = Color.White),
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        InfoRow("Year: ", movie.year)
+        InfoRow("Released: ", movie.released)
+        InfoRow("Genre: ", movie.genre)
+        InfoRow("Director: ", movie.director)
+        InfoRow("Writer: ", movie.writer)
+        InfoRow("Actors: ", movie.actors)
+        InfoRow("Plot: ", movie.plot)
+    }
+}
+
+
+
+@Composable
+fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+        )
+    }
+    Spacer(modifier = Modifier.height(2.dp))
 }
 
 
@@ -920,7 +1002,7 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
 
                 LazyColumn {
                     items(movieList.size) { index ->
-                        MovieItem(movie = movieList[index])
+                        MovieItem(movie = movieList[index], isPortrait = isPortrait)
                     }
                 }
 
