@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
@@ -309,7 +310,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
-                Spacer(modifier = Modifier.height(25.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 25.dp else 20.dp))
 
                 IconButton(
                     onClick = onBack,
@@ -336,7 +337,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     OutlinedTextField(
-                        modifier = Modifier.width(if (isPortrait) 250.dp else 650.dp),
+                        modifier = Modifier.width(if (isPortrait) 230.dp else 620.dp),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
                             containerColor = Color.White.copy(alpha = 0.15f),
                             unfocusedBorderColor = Color.White,
@@ -382,7 +383,7 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                             containerColor = Color.White.copy(alpha = 0.15f)
                         )
                     ) {
-                        Text("Retrieve")
+                        Text("Retrieve", color = Color.White )
                     }
                 }
 
@@ -430,6 +431,9 @@ fun SearchMoviesScreen(onBack: () -> Unit, movieDao: MovieDao) {
                     }
                 }
 
+            }
+            BackHandler {
+                onBack()
             }
         }
     }
@@ -499,7 +503,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
-                Spacer(modifier = Modifier.height(25.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 25.dp else 20.dp))
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier.size(38.dp),
@@ -580,9 +584,12 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
                 LazyColumn {
                     items(movieList.size) { movie ->
-                        MovieItem(movie = movieList[movie],isPortrait)
+                        MovieItem(movie = movieList[movie], isPortrait)
                     }
                 }
+            }
+            BackHandler {
+                onBack()
             }
         }
     }
@@ -590,7 +597,7 @@ fun SearchActorsScreen(onBack: () -> Unit, movieDao: MovieDao) {
 
 @Composable
 fun MovieItem(movie: Movie, isPortrait: Boolean) {
-    var imageBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var showDetails by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
 
@@ -680,6 +687,7 @@ fun MovieItem(movie: Movie, isPortrait: Boolean) {
     }
 
 }
+
 @Composable
 fun PosterContent(
     imageBitmap: ImageBitmap?,
@@ -687,7 +695,7 @@ fun PosterContent(
     showDetails: Boolean,
     movie: Movie
 ) {
-   AnimatedVisibility(
+    AnimatedVisibility(
         visible = !showDetails && !isLoading,
         exit = slideOutVertically { fullWidth -> -fullWidth },
         modifier = Modifier.fillMaxSize()
@@ -776,7 +784,6 @@ fun MovieDetails(movie: Movie) {
 }
 
 
-
 @Composable
 fun InfoRow(label: String, value: String) {
     Row(
@@ -816,7 +823,7 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
-                Spacer(modifier = Modifier.height(25.dp))
+                Spacer(modifier = Modifier.height(if (isPortrait) 25.dp else 20.dp))
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier.size(38.dp),
@@ -840,7 +847,7 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     OutlinedTextField(
-                        modifier = Modifier.width(if (isPortrait) 290.dp else 650.dp),
+                        modifier = Modifier.width(if (isPortrait) 260.dp else 650.dp),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
                             containerColor = Color.White.copy(alpha = 0.15f),
                             unfocusedBorderColor = Color.White,
@@ -903,7 +910,11 @@ fun SearchMoviesByTitleScreen(onBack: () -> Unit) {
                 }
 
             }
+            BackHandler {
+                onBack()
+            }
         }
+
     }
 }
 
